@@ -1,5 +1,11 @@
 package ciphers
 
+import (
+  "errors"
+
+  "github.com/jgblight/matasano/pkg/utils"
+)
+
 func rcon(i int) byte {
  arr := []byte{0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a}
  return arr[i]
@@ -143,6 +149,15 @@ func applyRoundKey(block [][]byte, key [][]byte) [][]byte {
   return block
 }
 
+func subBytes(block [][]byte) [][]byte {
+  for i := 0; i < 4; i++ {
+    for j := 0; j < 4; j ++ {
+      block[i][j] = sbox(int(block[i][j]))
+    }
+  }
+  return block
+}
+
 func inverseSubBytes(block [][]byte) [][]byte {
   for i := 0; i < 4; i++ {
     for j := 0; j < 4; j ++ {
@@ -165,6 +180,19 @@ func inverseShiftRows(block [][]byte) [][]byte {
   return outputBlock
 }
 
+func shiftRows(block [][]byte) [][]byte {
+  outputBlock := make([][]byte, 4)
+  for i := 0; i < 4; i++ {
+    outputBlock[i] = make([]byte, 4)
+  }
+  for i:=0; i<4; i++ {
+    for j:=0; j<4; j++ {
+      outputBlock[i][j] = block[i][(j+i) % 4]
+    }
+  }
+  return outputBlock
+}
+
 func inverseMixColumns(block [][]byte) [][]byte {
   outputBlock := make([][]byte, 4)
   for i := 0; i < 4; i++ {
@@ -177,6 +205,77 @@ func inverseMixColumns(block [][]byte) [][]byte {
     outputBlock[3][i] = gmul(11,block[0][i]) ^ gmul(13,block[1][i]) ^ gmul(9,block[2][i]) ^ gmul(14,block[3][i])
   }
   return outputBlock
+}
+
+func mixColumns(block [][]byte) [][]byte {
+  outputBlock := make([][]byte, 4)
+  for i := 0; i < 4; i++ {
+    outputBlock[i] = make([]byte, 4)
+  }
+  for i := 0; i < 4; i++ {
+    outputBlock[0][i] = gmul(2,block[0][i]) ^ gmul(3,block[1][i]) ^ block[2][i] ^ block[3][i]
+    outputBlock[1][i] = block[0][i] ^ gmul(2,block[1][i]) ^ gmul(3,block[2][i]) ^ block[3][i]
+    outputBlock[2][i] = block[0][i] ^ block[1][i] ^ gmul(2,block[2][i]) ^ gmul(3,block[3][i])
+    outputBlock[3][i] = gmul(3,block[0][i]) ^ block[1][i] ^ block[2][i] ^ gmul(2,block[3][i])
+  }
+  return outputBlock
+}
+
+func PKCS7(input []byte, l int) []byte {
+  padNum := l - len(input)
+  for i := 0; i < padNum; i++ {
+    input = append(input, byte(padNum))
+  }
+  return input
+}
+
+func CheckPKCS7(input []byte) ([]byte, error) {
+  var output []byte
+  finalChar := int(input[len(input)-1])
+  if finalChar >= 16 || finalChar == 0 {
+    output = input
+    return output, nil
+  }
+
+  for i := len(input) - finalChar; i < len(input); i++ {
+    if int(input[i]) != finalChar {
+      return nil, errors.New("Invalid PKCS7 padding")
+    }
+  }
+  output = input[:len(input) - finalChar]
+  return output, nil
+}
+
+func EncryptAES(plaintext, key []byte) []byte {
+  var ciphertext []byte
+  keys := keySchedule(key)
+  matrixKeys := make([][][]byte, len(keys))
+  for i := 0; i < len(keys); i++ {
+      matrixKeys[i] = matrixify(keys[i])
+  }
+
+  for i := 0; i < len(plaintext); i += 16 {
+    block := plaintext[i:utils.IntMin(i+16, len(plaintext))]
+    block = PKCS7(block, 16)
+    m := matrixify(block)
+
+    m = applyRoundKey(m, matrixKeys[0])
+
+    for j := 1; j < 10; j++ {
+      m = subBytes(m)
+      m = shiftRows(m)
+      m = mixColumns(m)
+      m = applyRoundKey(m, matrixKeys[j])
+    }
+    m = subBytes(m)
+    m = shiftRows(m)
+    m = applyRoundKey(m, matrixKeys[10])
+
+    block = blockify(m)
+    ciphertext = append(ciphertext, block...)
+  }
+
+  return ciphertext
 }
 
 func DecryptAES(ciphertext, key []byte) []byte {
@@ -205,6 +304,73 @@ func DecryptAES(ciphertext, key []byte) []byte {
 
     block = blockify(m)
     plaintext = append(plaintext, block...)
+  }
+
+  return plaintext
+}
+
+func EncryptAESCBC(plaintext, key, iv []byte) []byte {
+  var ciphertext []byte
+  keys := keySchedule(key)
+  matrixKeys := make([][][]byte, len(keys))
+  for i := 0; i < len(keys); i++ {
+      matrixKeys[i] = matrixify(keys[i])
+  }
+
+  for i := 0; i < len(plaintext); i += 16 {
+    block := plaintext[i:utils.IntMin(i+16, len(plaintext))]
+    block = PKCS7(block, 16)
+    block = utils.XOR(block, iv)
+    m := matrixify(block)
+
+    m = applyRoundKey(m, matrixKeys[0])
+
+    for j := 1; j < 10; j++ {
+      m = subBytes(m)
+      m = shiftRows(m)
+      m = mixColumns(m)
+      m = applyRoundKey(m, matrixKeys[j])
+    }
+    m = subBytes(m)
+    m = shiftRows(m)
+    m = applyRoundKey(m, matrixKeys[10])
+
+    block = blockify(m)
+    ciphertext = append(ciphertext, block...)
+    iv = block
+  }
+
+  return ciphertext
+}
+
+func DecryptAESCBC(ciphertext, key, iv []byte) []byte {
+  var plaintext []byte
+  keys := keySchedule(key)
+  reverseKeys := make([][][]byte, len(keys))
+  for i := 0; i < len(keys); i++ {
+      reverseKeys[i] = matrixify(keys[len(keys) - 1 - i])
+  }
+
+  for i := 0; i < len(ciphertext); i += 16 {
+    cipherblock := ciphertext[i:i+16]
+    m := matrixify(cipherblock)
+
+    m = applyRoundKey(m, reverseKeys[0])
+    m = inverseShiftRows(m)
+    m = inverseSubBytes(m)
+
+    for j := 1; j < 10; j++ {
+      m = applyRoundKey(m, reverseKeys[j])
+      m = inverseMixColumns(m)
+      m = inverseShiftRows(m)
+      m = inverseSubBytes(m)
+    }
+    m = applyRoundKey(m, reverseKeys[10])
+
+    block := blockify(m)
+    block = utils.XOR(block, iv)
+    plaintext = append(plaintext, block...)
+    iv = cipherblock
   }
 
   return plaintext

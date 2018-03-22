@@ -11,6 +11,7 @@ import (
   "github.com/fatih/color"
   "github.com/jgblight/matasano/pkg/utils"
   "github.com/jgblight/matasano/pkg/ciphers"
+  "github.com/jgblight/matasano/pkg/hacks"
 )
 
 const (
@@ -122,17 +123,8 @@ func problemEight(input string) (string, error) {
       return "", err
     }
 
-    for i := 0; i < len(bytes); i+=16 {
-      chunkOne := bytes[i:utils.IntMin(i+16, len(bytes))]
-      for j := 0; j < len(bytes); j+= 16 {
-        if i == j {
-          continue
-        }
-        chunkTwo := bytes[i:utils.IntMin(i+16, len(bytes))]
-        if utils.HammingDistance(chunkOne, chunkTwo) == 0 {
-          return str, nil
-        }
-      }
+    if hacks.IsECB(bytes, 16) {
+      return str, nil
     }
 
   }
@@ -142,7 +134,7 @@ func problemEight(input string) (string, error) {
 func main() {
     header := color.New(color.FgCyan, color.Bold)
 
-    header.Println("Problem 1: convert a hex string to base 64")
+    header.Println("Problem 1: Convert a hex string to base 64")
     input := "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
     fmt.Printf("          Input: %s\n", input)
     output, err := problemOne(input)
