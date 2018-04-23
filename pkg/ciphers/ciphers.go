@@ -2,6 +2,7 @@ package ciphers
 
 import (
   "github.com/jgblight/matasano/pkg/utils"
+  "github.com/jgblight/matasano/pkg/rng"
 )
 
 func DecryptSingleByteXOR(input []byte) ([]byte, byte, float64) {
@@ -56,4 +57,10 @@ func BreakRepeatingKeyXOR(ciphertext []byte) ([]byte, []byte) {
   }
 
   return RepeatingKeyXOR(ciphertext, key), key
+}
+
+func MT19937CTR(text []byte, seed int) []byte {
+  mt := rng.New(uint32(seed))
+  keystream := mt.Stream(len(text))
+  return utils.XOR(text, keystream)
 }

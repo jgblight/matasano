@@ -198,8 +198,9 @@ func problemSeven() {
   checkStrings := []string{
     "ICE ICE BABY\x04\x04\x04\x04",
     "ICE ICE BABY\x05\x05\x05\x05\x05",
-    "YELLOW SUBMARINE",
     "ICE ICE BABY\x01\x02\x03\x04",
+    "YELLOW SUBMARINE",
+    "YELLOW SUBMARINE\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10",
   }
 
   for _, str := range checkStrings {

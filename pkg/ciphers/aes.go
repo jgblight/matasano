@@ -232,9 +232,8 @@ func PKCS7(input []byte, l int) []byte {
 func CheckPKCS7(input []byte) ([]byte, error) {
   var output []byte
   finalChar := int(input[len(input)-1])
-  if finalChar >= 16 || finalChar == 0 {
-    output = input
-    return output, nil
+  if finalChar > 16 || finalChar == 0 {
+    return nil, errors.New("Invalid PKCS7 padding")
   }
 
   for i := len(input) - finalChar; i < len(input); i++ {
@@ -374,4 +373,18 @@ func DecryptAESCBC(ciphertext, key, iv []byte) []byte {
   }
 
   return plaintext
+}
+
+func CTR(plaintext, key []byte, nonce int) []byte {
+  keystream := []byte{}
+  counter := 0
+
+  for len(keystream) < len(plaintext) {
+    block := append(utils.LittleEndian(nonce), utils.LittleEndian(counter)...)
+    keyblock := EncryptAES(block, key)
+    keystream = append(keystream, keyblock...)
+    counter++
+  }
+
+  return utils.XOR(plaintext, keystream[:len(plaintext)])
 }

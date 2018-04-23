@@ -102,3 +102,22 @@ func HammingDistance(strOne, strTwo []byte) int {
   }
   return distance
 }
+
+func LittleEndian(n int) []byte {
+  bytes := make([]byte, 8)
+  for i, _ := range bytes {
+    bytes[i] = byte(n % 256)
+    n = n >> 8
+  }
+  return bytes
+}
+
+func CreateMask(l, r uint32) uint32 {
+  var mask uint32 = 0
+  for i := l; i < r; i++ {
+    if i < 32 {
+      mask = mask + (1<<(31-i))
+    }
+  }
+  return mask
+}
