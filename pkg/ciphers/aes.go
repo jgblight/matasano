@@ -1,6 +1,7 @@
 package ciphers
 
 import (
+	"encoding/binary"
 	"errors"
 
 	"github.com/jgblight/matasano/pkg/utils"
@@ -375,16 +376,32 @@ func DecryptAESCBC(ciphertext, key, iv []byte) []byte {
 	return plaintext
 }
 
-func CTR(plaintext, key []byte, nonce int) []byte {
+func generateKeystream(key []byte, nonce int, length int) []byte {
 	keystream := []byte{}
-	counter := 0
+	var counter uint64 = 0
 
-	for len(keystream) < len(plaintext) {
-		block := append(utils.LittleEndian(nonce), utils.LittleEndian(counter)...)
+	for len(keystream) < length {
+		block := make([]byte, 16)
+		binary.LittleEndian.PutUint64(block[:8], uint64(nonce))
+		binary.LittleEndian.PutUint64(block[8:], counter)
 		keyblock := EncryptAES(block, key)
 		keystream = append(keystream, keyblock...)
 		counter++
 	}
+	return keystream[:length]
+}
 
-	return utils.XOR(plaintext, keystream[:len(plaintext)])
+func CTR(plaintext, key []byte, nonce int) []byte {
+	keystream := generateKeystream(key, nonce, len(plaintext))
+	return utils.XOR(plaintext, keystream)
+}
+
+func EditCTR(ciphertext, key []byte, nonce, offset int, plaintext []byte) []byte {
+	keystream := generateKeystream(key, nonce, offset+len(plaintext))
+	keySlice := keystream[offset:]
+	newCiphertext := make([]byte, len(ciphertext))
+	copy(newCiphertext[:offset], ciphertext[:offset])
+	copy(newCiphertext[offset:offset+len(plaintext)], utils.XOR(plaintext, keySlice))
+	copy(newCiphertext[offset+len(plaintext):], ciphertext[offset+len(plaintext):])
+	return newCiphertext
 }

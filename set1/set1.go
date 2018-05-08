@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/fatih/color"
@@ -80,12 +79,7 @@ func problemFive(input string) string {
 }
 
 func problemSix(input string) (string, string, error) {
-	text, err := ioutil.ReadFile(dataDir + input)
-	if err != nil {
-		return "", "", err
-	}
-
-	bytes, err := base64.StdEncoding.DecodeString(string(text))
+	bytes, err := utils.ReadB64File(dataDir + input)
 	if err != nil {
 		return "", "", err
 	}
@@ -95,12 +89,7 @@ func problemSix(input string) (string, string, error) {
 }
 
 func problemSeven(input string) (string, error) {
-	text, err := ioutil.ReadFile(dataDir + input)
-	if err != nil {
-		return "", err
-	}
-
-	bytes, err := base64.StdEncoding.DecodeString(string(text))
+	bytes, err := utils.ReadB64File(dataDir + input)
 	if err != nil {
 		return "", err
 	}

@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/fatih/color"
 	"github.com/jgblight/matasano/pkg/ciphers"
@@ -33,12 +32,7 @@ func problemTwo(input string) (string, error) {
 	plaintext := ciphers.DecryptAESCBC(ciphertext, key, iv)
 	fmt.Printf(" Plaintext: %s\n", plaintext[:len(samplePlaintext)])
 
-	text, err := ioutil.ReadFile(dataDir + input)
-	if err != nil {
-		return "", err
-	}
-
-	bytes, err := base64.StdEncoding.DecodeString(string(text))
+	bytes, err := utils.ReadB64File(dataDir + input)
 	if err != nil {
 		return "", err
 	}

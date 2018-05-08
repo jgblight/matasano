@@ -3,6 +3,8 @@ package utils
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
+	"io/ioutil"
 	"math"
 	"math/bits"
 )
@@ -20,6 +22,19 @@ func frequencyMap() map[byte]float64 {
 		'q': 0.0008606, 'r': 0.0497563, 's': 0.0515760, 't': 0.0729357,
 		'u': 0.0225134, 'v': 0.0082903, 'w': 0.0171272, 'x': 0.0013692,
 		'y': 0.0145984, 'z': 0.0007836, ' ': 0.1918182}
+}
+
+func ReadB64File(filename string) ([]byte, error) {
+	text, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err := base64.StdEncoding.DecodeString(string(text))
+	if err != nil {
+		return nil, err
+	}
+	return bytes, nil
 }
 
 func Readln(r *bufio.Reader) (string, error) {
@@ -102,15 +117,6 @@ func HammingDistance(strOne, strTwo []byte) int {
 		distance += bits.OnesCount(uint(diff))
 	}
 	return distance
-}
-
-func LittleEndian(n int) []byte {
-	bytes := make([]byte, 8)
-	for i, _ := range bytes {
-		bytes[i] = byte(n % 256)
-		n = n >> 8
-	}
-	return bytes
 }
 
 func CreateMask(l, r uint32) uint32 {
