@@ -4,10 +4,30 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/base64"
+	"encoding/hex"
 	"io/ioutil"
 	"math"
+	"math/big"
 	"math/bits"
+	"os"
 )
+
+const (
+	dataDir   = "/Users/jennifer/go/src/github.com/jgblight/matasano/data/"
+	NISTPrime = "ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca237327ffffffffffffffff"
+)
+
+func GetNISTPrime() *big.Int {
+	x := &big.Int{}
+	x.SetString(NISTPrime, 16)
+	return x
+}
+
+func GetBigInt(i int) *big.Int {
+	x := &big.Int{}
+	x.SetInt64(int64(i))
+	return x
+}
 
 func IntMin(a, b int) int {
 	return int(math.Min(float64(a), float64(b)))
@@ -127,4 +147,29 @@ func CreateMask(l, r uint32) uint32 {
 		}
 	}
 	return mask
+}
+
+func PasswordGenerator(fn func(string) bool) error {
+	f, err := os.Open(dataDir + "common_passwords.txt")
+	if err != nil {
+		return err
+	}
+	scanner := bufio.NewScanner(f)
+
+	for scanner.Scan() {
+		str := scanner.Text()
+		shouldBreak := fn(str)
+		if shouldBreak {
+			return nil
+		}
+	}
+	return nil
+}
+
+func HexToBigint(text string) (*big.Int, error) {
+	cBytes, err := hex.DecodeString(text)
+	if err != nil {
+		return nil, err
+	}
+	return new(big.Int).SetBytes(cBytes), nil
 }

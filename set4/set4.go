@@ -222,18 +222,18 @@ func problemSeven() error {
 }
 
 func stats(numbers []int64) (float64, float64) {
-  n := float64(len(numbers))
-  sum := 0.0
-  for _, x := range numbers {
-    sum += float64(x)
-  }
-  mean := sum/n
-  variance := 0.0
-  for _, x := range numbers {
-    variance += math.Pow(float64(x)-mean, 2)
-  }
-  variance = variance / (n-1)
-  return mean, math.Sqrt(variance)
+	n := float64(len(numbers))
+	sum := 0.0
+	for _, x := range numbers {
+		sum += float64(x)
+	}
+	mean := sum / n
+	variance := 0.0
+	for _, x := range numbers {
+		variance += math.Pow(float64(x)-mean, 2)
+	}
+	variance = variance / (n - 1)
+	return mean, math.Sqrt(variance)
 }
 
 func problemEight() error {
@@ -243,13 +243,13 @@ func problemEight() error {
 
 	for j := 0; j < 40; j++ {
 		times := make([]int64, 16)
-    bestScore := 0.0
-    bestChar := "G"
-    stdDev := 0.0
-    mean := 0.0
-    tries := 0
-    minTries := int(math.Floor(float64(j)*0.1+2))
-    candidates := 0
+		bestScore := 0.0
+		bestChar := "G"
+		stdDev := 0.0
+		mean := 0.0
+		tries := 0
+		minTries := int(math.Floor(float64(j)*0.1 + 2))
+		candidates := 0
 		for bestScore < stdDev*2 || candidates > 1 || tries < minTries {
 			for i, c := range testChars {
 				testHash := foundHash + c + string(utils.MakeRepeatChar('0', 39-len(foundHash)))
@@ -268,23 +268,23 @@ func problemEight() error {
 
 				times[i] += elapsed.Nanoseconds()
 			}
-      mean, stdDev = stats(times)
-      candidates = 0
-      for i, t := range times {
-        score := float64(t) - mean
-        if score > stdDev*2 {
-          candidates += 1
-        }
+			mean, stdDev = stats(times)
+			candidates = 0
+			for i, t := range times {
+				score := float64(t) - mean
+				if score > stdDev*2 {
+					candidates += 1
+				}
 
-        if score > bestScore {
-          bestScore = score
-          bestChar = testChars[i]
-        }
-      }
-      tries++
+				if score > bestScore {
+					bestScore = score
+					bestChar = testChars[i]
+				}
+			}
+			tries++
 		}
-    foundHash = foundHash + bestChar
-    fmt.Println(foundHash)
+		foundHash = foundHash + bestChar
+		fmt.Println(foundHash)
 	}
 
 	return nil
@@ -337,7 +337,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-  fmt.Println()
+	fmt.Println()
 
 	header.Println("Problem 8: HMAC-SHA1 timing attack (fast)")
 	err = problemEight()
