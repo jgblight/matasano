@@ -200,6 +200,7 @@ func problemSeven() error {
 			if err != nil {
 				return err
 			}
+			resp.Body.Close()
 			if resp.StatusCode == 200 {
 				fmt.Printf("Found Hash: %s", testHash)
 				return nil

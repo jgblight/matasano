@@ -123,7 +123,7 @@ func InitializeSRPWithUnknownPassword() (*diffie.SRPClient, error) {
 }
 
 func RSAEncryptKnownPlaintext(plaintext []byte) (string, *big.Int, error) {
-	e, _, n, err := ciphers.RSAKeygen()
+	e, _, n, err := ciphers.RSAKeygen(512)
 	if err != nil {
 		return "", nil, err
 	}

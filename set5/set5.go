@@ -280,24 +280,6 @@ func checkPassword(password []byte, A *big.Int, N *big.Int, providedMac []byte) 
 	return false
 }
 
-// this is not really a Dictionary
-func generatePasswords(prefix []byte, n int, abort <-chan int, ps chan []byte) {
-	if n == 0 {
-		return
-	}
-
-	for i := 97; i < 122; i++ {
-		newPrefix := append(prefix, byte(i))
-		select {
-		case ps <- newPrefix:
-		case <-abort:
-			return
-		}
-		generatePasswords(newPrefix, n-1, abort, ps)
-	}
-	return
-}
-
 func problemSix() error {
 	fmt.Println("Running Simplified SRP")
 	client := diffie.NewSRPClient("name@email.com", "password")
@@ -344,7 +326,7 @@ func problemSix() error {
 }
 
 func problemSeven() error {
-	e, d, n, err := ciphers.RSAKeygen()
+	e, d, n, err := ciphers.RSAKeygen(512)
 	if err != nil {
 		return err
 	}
@@ -375,7 +357,7 @@ func problemEight() error {
 	if err != nil {
 		return err
 	}
-  fmt.Printf("Ciphertext 0: %s\n", cHex)
+	fmt.Printf("Ciphertext 0: %s\n", cHex)
 
 	cHex, n1, err := secrets.RSAEncryptKnownPlaintext(originalPlaintext)
 	if err != nil {
@@ -385,7 +367,7 @@ func problemEight() error {
 	if err != nil {
 		return err
 	}
-  fmt.Printf("Ciphertext 1: %s\n", cHex)
+	fmt.Printf("Ciphertext 1: %s\n", cHex)
 
 	cHex, n2, err := secrets.RSAEncryptKnownPlaintext(originalPlaintext)
 	if err != nil {
@@ -396,7 +378,7 @@ func problemEight() error {
 		return err
 	}
 
-  fmt.Printf("Ciphertext 2: %s\n", cHex)
+	fmt.Printf("Ciphertext 2: %s\n", cHex)
 
 	ms0 := new(big.Int).Mul(n1, n2)
 	ms1 := new(big.Int).Mul(n0, n2)
@@ -416,7 +398,7 @@ func problemEight() error {
 		return err
 	}
 
-  n012 := new(big.Int).Mul(n0, n1)
+	n012 := new(big.Int).Mul(n0, n1)
 	n012.Mul(n012, n2)
 
 	crt0 := new(big.Int).Mul(c0, ms0)
@@ -430,10 +412,10 @@ func problemEight() error {
 	crt.Add(crt, crt2)
 	crt.Mod(crt, n012)
 
-  x := new(big.Int).Sqrt(crt)
+	x := new(big.Int).Sqrt(crt)
 
 	zero := utils.GetBigInt(0)
-  three := utils.GetBigInt(3)
+	three := utils.GetBigInt(3)
 
 	xDif := utils.GetBigInt(3)
 	for xDif.Cmp(zero) != 0 {
